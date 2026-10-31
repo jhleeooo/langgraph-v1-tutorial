@@ -1,2 +1,501 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html{color-scheme:light}body{margin:0}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8"><title>LangGraph 학습 지도</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F3F5F0;
+    --surface:#FFFFFF;
+    --surface-2:#EAEDE6;
+    --border:#D8DED2;
+    --text:#182019;
+    --text-muted:#5B675F;
+    --accent:#2E6E58;
+    --accent-soft:#E1EBE3;
+    --accent-2:#B9862E;
+    --accent-2-soft:#F3E6C9;
+    --shadow: 0 1px 2px rgba(24,32,25,.05), 0 8px 24px rgba(24,32,25,.06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#10140F;
+      --surface:#181F19;
+      --surface-2:#212B21;
+      --border:#323F32;
+      --text:#E7ECE3;
+      --text-muted:#98A69C;
+      --accent:#5AB68E;
+      --accent-soft:#1E2E26;
+      --accent-2:#DDB05C;
+      --accent-2-soft:#2E2818;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#10140F;
+    --surface:#181F19;
+    --surface-2:#212B21;
+    --border:#323F32;
+    --text:#E7ECE3;
+    --text-muted:#98A69C;
+    --accent:#5AB68E;
+    --accent-soft:#1E2E26;
+    --accent-2:#DDB05C;
+    --accent-2-soft:#2E2818;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"IBM Plex Sans KR","IBM Plex Sans",-apple-system,sans-serif;
+    padding-inline:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;}
+  .wrap{max-width:920px;margin:0 auto;padding-block:28px 56px;}
+
+  header.top{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+    flex-wrap:wrap; margin-bottom:22px;
+  }
+  header.top h1{
+    font-size:26px; font-weight:700; margin:0 0 4px; letter-spacing:-.01em; text-wrap:balance;
+  }
+  header.top p{margin:0; color:var(--text-muted); font-size:14px; max-width:52ch;}
+  .eyebrow{
+    font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 6px;
+  }
+
+  .ring-card{
+    display:flex; align-items:center; gap:12px; background:var(--surface);
+    border:1px solid var(--border); border-radius:14px; padding:10px 16px 10px 10px;
+    box-shadow:var(--shadow); flex-shrink:0;
+  }
+  .ring-card .num{font-size:20px; font-weight:700; font-family:"IBM Plex Mono",monospace;}
+  .ring-card .label{font-size:11px; color:var(--text-muted);}
+
+  .stats{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:26px;
+  }
+  @media (max-width:560px){ .stats{grid-template-columns:repeat(2,1fr);} }
+  .stat{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:14px 14px 12px;
+  }
+  .stat .v{font-family:"IBM Plex Mono",monospace; font-size:22px; font-weight:600; font-variant-numeric:tabular-nums;}
+  .stat .l{font-size:12px; color:var(--text-muted); margin-top:2px;}
+
+  section.block{margin-bottom:30px;}
+  h2.h{
+    font-size:14px; font-weight:600; letter-spacing:.02em; margin:0 0 12px;
+    display:flex; align-items:center; gap:8px;
+  }
+  h2.h .n{color:var(--text-muted); font-weight:500;}
+
+  /* roadmap */
+  .roadmap-scroll{overflow-x:auto; padding-block:4px 10px; margin-inline:-16px; padding-inline:16px;}
+  .roadmap{display:flex; align-items:stretch; min-width:max-content;}
+  .node-btn{
+    all:unset; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:8px;
+    width:104px; text-align:center; padding-block:2px; border-radius:10px;
+  }
+  .node-btn:focus-visible{outline:2px solid var(--accent); outline-offset:3px;}
+  .node-dot{
+    width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:13px;
+    background:var(--surface); border:2px solid var(--border); color:var(--text-muted);
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .node-btn[data-complete="true"] .node-dot{
+    background:var(--accent); border-color:var(--accent); color:#fff;
+  }
+  .node-title{font-size:12px; font-weight:600; line-height:1.3;}
+  .node-sub{font-size:10.5px; color:var(--text-muted); font-family:"IBM Plex Mono",monospace;}
+  .edge{
+    width:36px; align-self:center; height:2px; background:var(--border); margin-top:-38px; flex-shrink:0;
+  }
+
+  /* chart */
+  .chart-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:18px 18px 8px; box-shadow:var(--shadow);
+  }
+  .chart-card svg text{font-family:"IBM Plex Mono",monospace;}
+  .bar-val{font-size:11px; fill:var(--text); font-weight:600;}
+  .bar-label{font-size:11px; fill:var(--text-muted);}
+  .grid-line{stroke:var(--border); stroke-width:1;}
+
+  /* chapter accordions */
+  .part{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    margin-bottom:10px; overflow:hidden;
+  }
+  .part > summary{
+    list-style:none; cursor:pointer; padding:14px 16px; display:flex; align-items:center; gap:12px;
+  }
+  .part > summary::-webkit-details-marker{display:none;}
+  .part-badge{
+    font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; color:var(--accent);
+    background:var(--accent-soft); border-radius:6px; padding:3px 7px; flex-shrink:0;
+  }
+  .part-name{font-weight:600; font-size:14.5px; flex:1; min-width:0;}
+  .part-count{font-size:11.5px; color:var(--text-muted); font-family:"IBM Plex Mono",monospace; flex-shrink:0;}
+  .chev{
+    width:9px; height:9px; border-right:2px solid var(--text-muted); border-bottom:2px solid var(--text-muted);
+    transform:rotate(-45deg); transition:transform .15s; flex-shrink:0; margin-right:2px;
+  }
+  .part[open] .chev{transform:rotate(45deg);}
+  .part-bar{height:3px; background:var(--surface-2); position:relative;}
+  .part-bar i{position:absolute; inset:0; width:0%; background:var(--accent); border-radius:2px; transition:width .2s;}
+  .part-bar i.ex{background:var(--accent-2); opacity:.5;}
+  .part-bar i:not(.ex){z-index:1;}
+  .chapters{padding:2px 8px 10px;}
+  .chapter-row .cx{font-size:12px; color:var(--text-muted); margin-top:3px; line-height:1.45; text-wrap:pretty;}
+  .badge-pending{
+    font-size:9.5px; font-weight:600; letter-spacing:.02em; color:var(--text-muted);
+    background:var(--surface-2); border-radius:5px; padding:1px 6px; margin-left:6px; white-space:nowrap;
+  }
+  .chapter-row{
+    display:flex; align-items:flex-start; gap:10px; padding:9px 8px; border-radius:8px;
+  }
+  .chapter-row:hover{background:var(--surface-2);}
+  .chapter-row input[type=checkbox]{
+    appearance:none; width:18px; height:18px; border-radius:5px; border:2px solid var(--border);
+    flex-shrink:0; margin-top:1px; cursor:pointer; position:relative; background:var(--surface);
+  }
+  .chapter-row input[type=checkbox]:checked{background:var(--accent); border-color:var(--accent);}
+  .chapter-row input[type=checkbox]:checked::after{
+    content:""; position:absolute; left:4px; top:0px; width:5px; height:9px;
+    border-right:2px solid #fff; border-bottom:2px solid #fff; transform:rotate(45deg);
+  }
+  .chapter-row label{flex:1; min-width:0; cursor:pointer;}
+  .chapter-row .ct{font-size:13.5px; font-weight:500; text-wrap:balance;}
+  .chapter-row .cn{font-size:11.5px; color:var(--text-muted); font-family:"IBM Plex Mono",monospace; margin-top:1px;}
+  .chapter-row.done .ct{color:var(--text-muted); text-decoration:line-through; text-decoration-color:var(--border);}
+  .badge-discussed{
+    font-size:9.5px; font-weight:600; letter-spacing:.02em; color:var(--accent-2);
+    background:var(--accent-2-soft); border-radius:5px; padding:1px 6px; margin-left:6px; white-space:nowrap;
+  }
+
+  /* stack table */
+  .stack-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:6px 4px; box-shadow:var(--shadow); overflow-x:auto;
+  }
+  table{width:100%; border-collapse:collapse; font-size:12.5px; min-width:420px;}
+  th{
+    text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--text-muted); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--border);
+  }
+  td{padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  td.pkg{font-family:"IBM Plex Mono",monospace; font-weight:600;}
+  td.ver{font-family:"IBM Plex Mono",monospace; color:var(--accent);}
+  td.note{color:var(--text-muted);}
+
+  footer{text-align:center; color:var(--text-muted); font-size:11.5px; margin-top:34px;}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">LangGraph V1 Tutorial · 학습 지도</p>
+      <h1>LangGraph 튜토리얼 대시보드</h1>
+      <p>langgraph-v1-tutorial 저장소의 PART01–05 및 Appendix 커리큘럼과 학습 진행 상황입니다.</p>
+    </div>
+    <div class="ring-card">
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <circle cx="26" cy="26" r="21" fill="none" stroke="var(--surface-2)" stroke-width="6"/>
+        <circle id="ringProgress" cx="26" cy="26" r="21" fill="none" stroke="var(--accent)" stroke-width="6"
+          stroke-linecap="round" stroke-dasharray="131.9" stroke-dashoffset="131.9"
+          transform="rotate(-90 26 26)"/>
+      </svg>
+      <div>
+        <div class="num" id="progressPct">0%</div>
+        <div class="label">학습 완료율</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="v">54</div><div class="l">노트북 · 25 챕터</div></div>
+    <div class="stat"><div class="v mono" id="explainedCount">0 / 25</div><div class="l">대화에서 설명한 챕터</div></div>
+    <div class="stat"><div class="v mono" id="doneCount">0 / 25</div><div class="l">직접 학습 완료</div></div>
+    <div class="stat"><div class="v mono" id="pendingCount">0</div><div class="l">학습 남은 챕터</div></div>
+  </div>
+
+  <section class="block">
+    <h2 class="h">커리큘럼 로드맵 <span class="n">· 노드를 누르면 해당 파트로 이동</span></h2>
+    <div class="roadmap-scroll">
+      <div class="roadmap" id="roadmap"></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2 class="h">파트별 노트북 수</h2>
+    <div class="chart-card">
+      <svg id="barChart" viewBox="0 0 640 220" width="100%" style="max-width:100%; height:auto; display:block;"></svg>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2 class="h">챕터 체크리스트 <span class="n">· 체크 = 직접 학습 완료(이 브라우저에만 저장), 뱃지 = 대화에서 설명함</span></h2>
+    <div id="parts"></div>
+  </section>
+
+  <section class="block">
+    <h2 class="h">기술 스택 <span class="n">· pyproject.toml 기준</span></h2>
+    <div class="stack-card">
+      <table>
+        <thead><tr><th>패키지</th><th>버전</th><th>비고</th></tr></thead>
+        <tbody id="stackBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>langgraph-v1-tutorial · 진행 상태는 이 브라우저에만 저장되며 공유되지 않습니다.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var CURRICULUM = [
+    { id:"p1", part:"PART 01", name:"LangGraph 기초", notebooks:6,
+      chapters:[
+        { id:"ch01", title:"Ch01. 그래프 생성하기", n:6, discussed:true, note:"State(TypedDict·Annotated·add_messages), 모델 API, 메시지 타입, Graph API 전반(리듀서·Send·Command), QuickStart 통합" }
+      ]},
+    { id:"p2", part:"PART 02", name:"에이전트", notebooks:8,
+      chapters:[
+        { id:"ch02", title:"Ch02. 에이전트", n:4, discussed:true, note:"create_agent, 동적 모델 선택, @tool과 ToolRuntime, Ollama 로컬 모델" },
+        { id:"ch03", title:"Ch03. Runtime", n:1, discussed:true, note:"도구·미들웨어에서 Context, Store, Stream Writer 접근" },
+        { id:"ch04", title:"Ch04. 구조화된 출력", n:1, discussed:true, note:"response_format: Provider/Tool Calling 전략, 오류 처리 방식" },
+        { id:"ch05", title:"Ch05. Human-in-the-Loop", n:2, discussed:true, note:"approve/edit/reject, Command(resume), 대기는 앱이 담당" }
+      ]},
+    { id:"p3", part:"PART 03", name:"에이전트 확장", notebooks:9,
+      chapters:[
+        { id:"ch06", title:"Ch06. 미들웨어", n:1, discussed:true, note:"내장 6종, 데코레이터·클래스 커스텀, before/after/wrap 실행 순서" },
+        { id:"ch07", title:"Ch07. 컨텍스트 엔지니어링", n:1, discussed:true, note:"Model/Tool/Life-cycle 컨텍스트, @dynamic_prompt·wrap_model_call로 프롬프트·도구·모델·출력 형식 동적 변경" },
+        { id:"ch08", title:"Ch08. 가드레일", n:1, discussed:true, note:"결정론적 vs 모델 기반, PIIMiddleware 4전략, before/after_agent + jump_to, 방어 계층 순서" },
+        { id:"ch09", title:"Ch09. 메모리 추가하기", n:5, discussed:true, note:"Checkpointer·thread_id, 트리밍·삭제·요약, Store 장기 메모리, PostgresSaver·PostgresStore" },
+        { id:"ch10", title:"Ch10. LangGraph MCP 실습", n:1, discussed:true, note:"MCPAdapter(stdio·HTTP·다중 서버), FastMCP 서버 3종, ToolNode 통합, Context7" }
+      ]},
+    { id:"p4", part:"PART 04", name:"멀티에이전트", notebooks:4,
+      chapters:[
+        { id:"ch11", title:"Ch11. 멀티에이전트 Supervisor", n:2, discussed:true, note:"Tool Calling vs Handoffs, create_supervisor, Command·Send 위임, Agent-as-Tool" },
+        { id:"ch12", title:"Ch12. 멀티 에이전트 협업 네트워크", n:1, discussed:true, note:"중앙 감독 없이 FINAL ANSWER 라우터로 두 에이전트가 순환" },
+        { id:"ch13", title:"Ch13. 계층적 에이전트 팀", n:1, discussed:true, note:"AgentFactory, 팀별 Sub-Supervisor, Super-Graph로 팀 결합" }
+      ]},
+    { id:"p5", part:"PART 05", name:"핵심 기능 구현하기", notebooks:11,
+      chapters:[
+        { id:"ch14", title:"Ch14. LangGraph 활용 Agent 구축", n:1, discussed:true, note:"BasicToolNode 직접 구현, route_tools 조건부 엣지, ReAct 순환" },
+        { id:"ch15", title:"Ch15. 중간 단계의 상태 수동 업데이트", n:1, discussed:true, note:"update_state로 ToolMessage 교체·쿼리 수정, 과거 스냅샷 Replay" },
+        { id:"ch16", title:"Ch16. 상태 커스터마이징", n:1, discussed:true, note:"ask_human 플래그 + HumanRequest 도구 + human 노드 interrupt" },
+        { id:"ch17", title:"Ch17. ToolNode", n:1, discussed:true, note:"tools_condition, handle_tool_errors 5가지 방식, ToolRuntime 상태 접근" },
+        { id:"ch18", title:"Ch18. 병렬 노드 실행을 위한 분기 생성", n:1, discussed:true, note:"fan-out/in, super-step 트랜잭션, defer=True, then, 신뢰도 정렬" },
+        { id:"ch19", title:"Ch19. 서브그래프 추가 및 사용", n:1, discussed:true, note:"키 공유 시 서브그래프를 노드로 추가, 미공유 시 래퍼 함수" },
+        { id:"ch20", title:"Ch20. 서브그래프 입출력 변환", n:1, discussed:true, note:"grandchild → child → parent 3계층 상태 변환 래퍼" },
+        { id:"ch21", title:"Ch21. LangGraph 스트리밍 모드", n:3, discussed:true, note:"values/updates/messages/custom, astream_events v2·v3(beta), subgraphs=True" },
+        { id:"ch22", title:"Ch22. Agent Chat UI (OSS)", n:1, discussed:true, note:"langgraph.json, langgraph dev(:2024), Chat UI 연결" }
+      ]},
+    { id:"p6", part:"Appendix", name:"부록", notebooks:16,
+      chapters:[
+        { id:"apxA", title:"A. RAG 응용", n:10, discussed:true, note:"Naive → 관련성 → 웹 폴백 → 쿼리 재작성, Agentic·CRAG·Self·Adaptive RAG" },
+        { id:"apxB", title:"B. Use Cases", n:5, discussed:true, note:"대화 시뮬레이션, 메타 프롬프트, Plan-and-Execute, SQL Agent, STORM 연구" },
+        { id:"apxC", title:"C. GraphRAG (Neo4j)", n:1, discussed:true, note:"Text2Cypher: 스키마 주입, DML 차단, 최대 3회 재시도" }
+      ]}
+  ];
+
+  var STACK = [
+    ["langchain", ">= 1.4.0", "create_agent, 미들웨어, langchain.mcp"],
+    ["langchain-core", ">= 1.6", "reasoning_effort, 표준 모델 예외"],
+    ["langgraph", ">= 1.2.11", "이벤트 스트리밍 v3, 노드 오류 핸들러"],
+    ["langgraph-checkpoint-postgres/-redis", ">= 3.1 / 0.5", "영속 체크포인터"],
+    ["langchain-anthropic/-openai", ">= 1.7 / 1.6", "모델 통합"],
+    ["fastmcp / mcp", ">= 4.0 / 2.1", "MCP 서버 · SDK"],
+    ["deepagents", ">= 0.7", "Deep Agents"],
+    ["langchain-teddynote", ">= 0.5.4", "그래프 시각화, 스트리밍 헬퍼"]
+  ];
+
+  var ALL_CHAPTERS = CURRICULUM.reduce(function(acc, p){ return acc.concat(p.chapters); }, []);
+  var TOTAL = ALL_CHAPTERS.length;
+  var DEFAULTS = [];
+  var EXPLAINED = ALL_CHAPTERS.filter(function(c){ return c.discussed; }).length;
+  function isExplained(c){ return !!c.discussed; }
+  var STORE_KEY = "lgv1-progress-v1";
+
+  function loadProgress(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) return JSON.parse(raw);
+    }catch(e){}
+    return DEFAULTS.slice();
+  }
+  function saveProgress(list){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(list)); }catch(e){}
+  }
+
+  var checked = loadProgress();
+  function isChecked(id){ return checked.indexOf(id) !== -1; }
+  function toggle(id, on){
+    var i = checked.indexOf(id);
+    if (on && i === -1) checked.push(id);
+    if (!on && i !== -1) checked.splice(i,1);
+    saveProgress(checked);
+    render();
+  }
+
+  function svgEl(tag, attrs){
+    var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  function renderRoadmap(){
+    var root = document.getElementById("roadmap");
+    root.innerHTML = "";
+    CURRICULUM.forEach(function(p, idx){
+      if (idx > 0){
+        var edge = document.createElement("div");
+        edge.className = "edge";
+        root.appendChild(edge);
+      }
+      var done = p.chapters.filter(function(c){ return isChecked(c.id); }).length;
+      var btn = document.createElement("button");
+      btn.className = "node-btn";
+      btn.setAttribute("data-complete", done === p.chapters.length ? "true" : "false");
+      btn.innerHTML =
+        '<div class="node-dot">'+ (idx < 5 ? ("0"+(idx+1)) : "Apx") +'</div>' +
+        '<div class="node-title">'+ p.name +'</div>' +
+        '<div class="node-sub">설명 '+ p.chapters.filter(isExplained).length +' · 완료 '+ done +'/'+ p.chapters.length +'</div>';
+      btn.addEventListener("click", function(){
+        var target = document.getElementById("part-"+p.id);
+        if (target) target.scrollIntoView({behavior:"smooth", block:"center"});
+      });
+      root.appendChild(btn);
+    });
+  }
+
+  function renderChart(){
+    var svg = document.getElementById("barChart");
+    svg.innerHTML = "";
+    var W=640,H=220, padL=34, padR=16, padT=18, padB=34;
+    var plotW = W-padL-padR, plotH = H-padT-padB;
+    var max = Math.max.apply(null, CURRICULUM.map(function(p){return p.notebooks;}));
+    var niceMax = Math.ceil(max/4)*4;
+    var barGap = 18;
+    var barW = (plotW - barGap*(CURRICULUM.length-1)) / CURRICULUM.length;
+
+    [0,0.25,0.5,0.75,1].forEach(function(t){
+      var y = padT + plotH*(1-t);
+      svg.appendChild(svgEl("line",{x1:padL,x2:W-padR,y1:y,y2:y,class:"grid-line"}));
+      var lbl = svgEl("text",{x:padL-8,y:y+4,"text-anchor":"end",class:"bar-label"});
+      lbl.textContent = Math.round(niceMax*t);
+      svg.appendChild(lbl);
+    });
+
+    CURRICULUM.forEach(function(p, i){
+      var x = padL + i*(barW+barGap);
+      var h = plotH * (p.notebooks/niceMax);
+      var y = padT + plotH - h;
+      svg.appendChild(svgEl("rect",{
+        x:x, y:y, width:barW, height:h, rx:4, ry:4, fill:"var(--accent)"
+      }));
+      var val = svgEl("text",{x:x+barW/2, y:y-7, "text-anchor":"middle", class:"bar-val"});
+      val.textContent = p.notebooks;
+      svg.appendChild(val);
+      var lbl = svgEl("text",{x:x+barW/2, y:H-padB+18, "text-anchor":"middle", class:"bar-label"});
+      lbl.textContent = i < 5 ? ("P"+(i+1)) : "Apx";
+      svg.appendChild(lbl);
+    });
+  }
+
+  function renderParts(){
+    var root = document.getElementById("parts");
+    var nextPart = CURRICULUM.filter(function(q){ return q.chapters.some(function(c){ return !isChecked(c.id); }); })[0];
+    var openIds = {};
+    Array.prototype.forEach.call(root.querySelectorAll("details.part"), function(d){ openIds[d.id] = d.open; });
+    root.innerHTML = "";
+    CURRICULUM.forEach(function(p){
+      var done = p.chapters.filter(function(c){ return isChecked(c.id); }).length;
+      var pct = Math.round(100*done/p.chapters.length);
+
+      var det = document.createElement("details");
+      det.className = "part";
+      det.id = "part-"+p.id;
+      det.open = (det.id in openIds) ? openIds[det.id] : (nextPart === p);
+
+      var summary = document.createElement("summary");
+      summary.innerHTML =
+        '<span class="part-badge">'+p.part+'</span>' +
+        '<span class="part-name">'+p.name+'</span>' +
+        '<span class="part-count">설명 '+p.chapters.filter(isExplained).length+' · 완료 '+done+'/'+p.chapters.length+'</span>' +
+        '<span class="chev"></span>';
+      det.appendChild(summary);
+
+      var bar = document.createElement("div");
+      bar.className = "part-bar";
+      bar.innerHTML = '<i class="ex" style="width:'+Math.round(100*p.chapters.filter(isExplained).length/p.chapters.length)+'%"></i><i style="width:'+pct+'%"></i>';
+      det.appendChild(bar);
+
+      var list = document.createElement("div");
+      list.className = "chapters";
+      p.chapters.forEach(function(c){
+        var row = document.createElement("div");
+        row.className = "chapter-row" + (isChecked(c.id) ? " done" : "");
+        var cbId = "cb-"+c.id;
+        row.innerHTML =
+          '<input type="checkbox" id="'+cbId+'" '+(isChecked(c.id)?"checked":"")+'>' +
+          '<label for="'+cbId+'"><div class="ct">'+c.title+(c.discussed?'<span class="badge-discussed">설명함</span>':'<span class="badge-pending">미설명</span>')+'</div>' +
+          '<div class="cn">노트북 '+c.n+'개</div><div class="cx">'+c.note+'</div></label>';
+        list.appendChild(row);
+        row.querySelector("input").addEventListener("change", function(e){
+          toggle(c.id, e.target.checked);
+        });
+      });
+      det.appendChild(list);
+      root.appendChild(det);
+    });
+  }
+
+  function renderStats(){
+    var done = ALL_CHAPTERS.filter(function(c){ return isChecked(c.id); }).length;
+    var pct = Math.round(100*done/TOTAL);
+    document.getElementById("doneCount").textContent = done + " / " + TOTAL;
+    document.getElementById("explainedCount").textContent = EXPLAINED + " / " + TOTAL;
+    document.getElementById("pendingCount").textContent = TOTAL - done;
+    document.getElementById("progressPct").textContent = pct + "%";
+    var ring = document.getElementById("ringProgress");
+    var circumference = 131.9;
+    ring.setAttribute("stroke-dashoffset", (circumference * (1 - pct/100)).toFixed(1));
+  }
+
+  function renderStack(){
+    var tbody = document.getElementById("stackBody");
+    tbody.innerHTML = "";
+    STACK.forEach(function(row){
+      var tr = document.createElement("tr");
+      tr.innerHTML = '<td class="pkg">'+row[0]+'</td><td class="ver">'+row[1]+'</td><td class="note">'+row[2]+'</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  function render(){
+    renderStats();
+    renderRoadmap();
+    renderParts();
+  }
+
+  render();
+  renderChart();
+  renderStack();
+})();
+</script>
+
 </body></html>
